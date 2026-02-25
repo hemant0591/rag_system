@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: rag-system
+Version: 0.1.0
+Summary: Production-grade conversational RAG backend
+Requires-Python: <3.12,>=3.11
+Requires-Dist: fastapi==0.110.0
+Requires-Dist: uvicorn[standard]==0.27.1
+Requires-Dist: sqlalchemy==2.0.27
+Requires-Dist: asyncpg==0.29.0
+Requires-Dist: alembic==1.13.1
+Requires-Dist: pydantic==2.6.1
+Requires-Dist: qdrant-client==1.7.3
+Requires-Dist: python-dotenv==1.0.1
+Requires-Dist: httpx==0.27.0
+Requires-Dist: loguru==0.7.2
+Requires-Dist: greenlet==3.0.3
+Requires-Dist: pydantic-settings==2.2
