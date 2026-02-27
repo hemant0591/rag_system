@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from sqlalchemy import func
 from sqlalchemy import DateTime, ForeignKey, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,7 +29,8 @@ class UserMemorySemantic(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc).isoformat()
+        DateTime(timezone=True),
+        server_default=func.now(), nullable= False
     )
 
     last_accessed_at: Mapped[datetime | None] = mapped_column(

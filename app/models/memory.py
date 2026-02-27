@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from sqlalchemy import func
 from sqlalchemy import DateTime, ForeignKey, Text, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -32,7 +33,10 @@ class ConversationSummary(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc).isoformat()
+        DateTime(timezone=True),
+        server_default=func.now(), 
+        onupdate=func.now(),
+        nullable= False
     )
 
     conversation = relationship("Conversation")

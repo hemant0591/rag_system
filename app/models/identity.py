@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, timezone
@@ -14,7 +15,8 @@ class Tenant(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc).isoformat()
+        DateTime(timezone=True),
+        server_default=func.now(), nullable= False
     )
 
 class User(Base):
@@ -28,6 +30,9 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(50), default="member")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc).isoformat())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(), nullable=False
+    )
 
     tenant = relationship("Tenant")

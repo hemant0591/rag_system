@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from sqlalchemy import func
 from sqlalchemy import String, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,10 +24,12 @@ class Conversation(Base):
     status: Mapped[str] = mapped_column(String(50), default="active")
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime(timezone=True),
+        server_default=func.now(), nullable= False
     )
     last_activity_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc).isoformat()
+       DateTime(timezone=True),
+       server_default=func.now(), nullable=False
     )
 
     user = relationship("User")
@@ -54,7 +57,8 @@ class Message(Base):
     extra_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(timezone.utc).isoformat()
+        DateTime(timezone=True),
+        server_default=func.now(), nullable= False
     )
 
     conversation = relationship("Conversation")
