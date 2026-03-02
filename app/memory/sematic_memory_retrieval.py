@@ -3,6 +3,8 @@ from app.retrieval.vector_store import search_semantic_memory
 from app.core.database import AsyncSessionLocal
 from app.models.semantic_memory import UserMemorySemantic
 
+from sqlalchemy import select
+
 async def retrieve_semantic_memory(
         tenant_id,
         user_id,
@@ -24,10 +26,18 @@ async def retrieve_semantic_memory(
         return []
     
     async with AsyncSessionLocal() as db:
-        records = await db.execute(
-            UserMemorySemantic.__table__.select().where(
-                UserMemorySemantic.id.in_(memory_ids)
-            )
-        )
+    #     records = await db.execute(
+    #         UserMemorySemantic.__table__.select().where(
+    #             UserMemorySemantic.id.in_(memory_ids)
+    #         )
+    #     )
 
-    return records.fetchall()
+    # return records.fetchall()
+    
+        query = select(UserMemorySemantic.content).where(
+            UserMemorySemantic.id.in_(memory_ids)
+        )
+        result = await db.execute(query)
+        contents = result.scalars().all()
+
+    return contents

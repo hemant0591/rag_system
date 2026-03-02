@@ -1,7 +1,4 @@
 import asyncio
-import uuid
-
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.models.identity import Tenant, User
@@ -9,6 +6,7 @@ from app.memory.semantic_memory_service import create_semantic_memory
 from app.retrieval.vector_store import client
 from app.memory.sematic_memory_retrieval import retrieve_semantic_memory
 from app.core.logging import configure_logging
+from app.llm.context_builder import build_context
 
 configure_logging()
 
@@ -17,17 +15,23 @@ queries = [
     "Anatarctica is the coldest place on earth",
     "Death valley is the hottest place on earth",
     "Mt. Everest is the highest mountain on earth",
-    "Aconcagua is the highest mountain in South America"
+    "Aconcagua is the highest mountain in South America",
     "Denali is the highest mountain in North America",
     "Kilimanjaro is the highest mountain in Africa,",
     "Elbrus is the highest mountain in Europe",
     "Vinson Massif is the highest mountain in Antarctica",
-    "Puncak Jaya is the highest mountain in Oceania/Australia"
+    "Puncak Jaya is the highest mountain in Oceania/Australia",
     "Olympus Mons is the highest mountain in the solar system",
     "There are 2 trillion galaxies in the universe",
     "Andromeda is the nearest galaxy from milky way",
-    "Milky way is in the Laniakea supercluster"
+    "Milky way is in the Laniakea supercluster",
 ]
+
+user_preferences = ["short", "to-the-point", "technical"]
+
+system_prompt = "You are a chatbot, please respond professionally and courteously"
+
+query = "highest mountain"
 
 async def run_test():
     async with AsyncSessionLocal() as db:
@@ -78,6 +82,20 @@ async def run_test():
 
     print("##### Query results #####")
     print(results)
+
+    messages, tokens = build_context(
+        system_prompt=system_prompt,
+        structured_memory=user_preferences,
+        semantic_memory=results,
+        current_user_input=query,
+        conversation_summary=None,
+        recent_messages=None,
+    )
+
+    print(f"Message: {messages}")
+    print(f"Lenght of messages: {len(messages)}")
+    print(f"Tokens used: {tokens}")
+
 
 if __name__ == "__main__":
     asyncio.run(run_test())
