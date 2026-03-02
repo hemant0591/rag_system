@@ -1,8 +1,11 @@
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.semantic_memory import UserMemorySemantic
-from app.retrieval.embedding_service import embedding_service
+from app.retrieval.embedding_service import embedding_provider
 from app.retrieval.vector_store import upsert_semantic_memory
+
+import logging
+logger = logging.getLogger(__name__)
 
 async def create_semantic_memory(
         db: AsyncSession,
@@ -17,11 +20,17 @@ async def create_semantic_memory(
         content=content,
     )
 
+    logger.info("Creating semantic memory")
+    
     db.add(memory)
     await db.commit()
     await db.refresh(memory)
 
-    embedding = embedding_service.embed(content)
+    logger.info("Postgres memory committed", extra={"memory_id": str(memory.id)})
+
+    embedding = await embedding_provider.embed(content)
+
+    logger.info("Upserting vector to Qdrant", extra={"memory_id": str(memory.id)})
 
     upsert_semantic_memory(
         memory_id=memory.id,

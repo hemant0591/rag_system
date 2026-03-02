@@ -1,4 +1,4 @@
-from app.retrieval.embedding_service import embedding_service
+from app.retrieval.embedding_service import embedding_provider
 from app.retrieval.vector_store import search_semantic_memory
 from app.core.database import AsyncSessionLocal
 from app.models.semantic_memory import UserMemorySemantic
@@ -9,7 +9,7 @@ async def retrieve_semantic_memory(
         query_text:str,
         top_k:int = 5,
 ):
-    query_embedding = embedding_service.embed(query_text)
+    query_embedding = await embedding_provider.embed(query_text)
 
     results = search_semantic_memory(
         query_embedding=query_embedding,

@@ -8,13 +8,16 @@ from app.models.identity import Tenant, User
 from app.memory.semantic_memory_service import create_semantic_memory
 from app.retrieval.vector_store import client
 from app.memory.sematic_memory_retrieval import retrieve_semantic_memory
+from app.core.logging import configure_logging
+
+configure_logging()
 
 queries = [
     "Ton 618 is the most massive black hole.",
     "Anatarctica is the coldest place on earth",
     "Death valley is the hottest place on earth",
     "Mt. Everest is the highest mountain on earth",
-    "Aconcagua (South America)"
+    "Aconcagua is the highest mountain in South America"
     "Denali is the highest mountain in North America",
     "Kilimanjaro is the highest mountain in Africa,",
     "Elbrus is the highest mountain in Europe",
