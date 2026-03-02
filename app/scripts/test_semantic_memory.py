@@ -81,3 +81,10 @@ async def run_test():
 
 if __name__ == "__main__":
     asyncio.run(run_test())
+
+# from app.llm.tokenizer import TokenCounter
+# from app.core.config import settings
+
+# counter = TokenCounter(settings.generation_model)
+
+# print(counter.count_text("highest mountain in the world"))
