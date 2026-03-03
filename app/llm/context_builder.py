@@ -41,15 +41,33 @@ def build_context(
         )
 
     # Add semantic memory
-    if semantic_memory:
-        semantic_block = {
-            "relevant_long_term_memory": semantic_memory
+    semantic_memories_added = []
+    
+    for memory in semantic_memory:
+        candidate_block = {
+            "relevant_long_term_memory": semantic_memories_added + [memory]
         }
+
+        content = (
+            "Additional retrieved context:\n"
+            + json.dumps(candidate_block)
+        )
+
+        if assembler.budget.can_add_text(content):
+            semantic_memories_added.append(memory)
+        else:
+            break
+
+    if semantic_memories_added:
+        final_block = {
+            "relevant_long_term_memory": semantic_memories_added
+        }
+
         assembler.add_message(
             "system",
-            "Additional retrieved context (may or may not be relevant):\n"
-            + json.dumps(semantic_block)
-        )
+            "Additional retrieved context:\n"
+            + json.dumps(final_block)
+            )
 
     # Add conversation memory
     if conversation_summary:

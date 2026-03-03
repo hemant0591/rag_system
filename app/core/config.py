@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     reserved_output_tokens: int = 1000
     safety_buffer_tokens: int = 500
     generation_safety_margin: int = 100
+    max_recent_message_tokens: int = 1200
+    recent_message_window: int = 6
 
     class Config:
         env_file = ".env"
