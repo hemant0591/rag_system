@@ -8,7 +8,7 @@ from app.core.config import settings
 
 def build_context(
         system_prompt: str,
-        structured_memory: List[str],
+        structured_memory: Dict[str, Dict[str, str]],
         semantic_memory: List[str],
         conversation_summary: str | None,
         recent_messages: List[Dict[str, str]] | None,
@@ -36,7 +36,8 @@ def build_context(
         }
         assembler.add_message(
             "system",
-            json.dumps(structured_block)
+            "Contextual user profile (use if relevant):\n"
+            + json.dumps(structured_block)
         )
 
     # Add semantic memory
@@ -46,12 +47,17 @@ def build_context(
         }
         assembler.add_message(
             "system",
-            json.dumps(semantic_block)
+            "Additional retrieved context (may or may not be relevant):\n"
+            + json.dumps(semantic_block)
         )
 
     # Add conversation memory
     if conversation_summary:
-        assembler.add_message("system", f"Conversation summary: {conversation_summary}")
+        assembler.add_message(
+            "system",
+            "Conversation summary (recent context):\n"
+            + conversation_summary
+        )
 
     # Add recent messages
     if recent_messages:

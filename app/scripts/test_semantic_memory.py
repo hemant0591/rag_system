@@ -7,6 +7,9 @@ from app.retrieval.vector_store import client
 from app.memory.sematic_memory_retrieval import retrieve_semantic_memory
 from app.core.logging import configure_logging
 from app.llm.context_builder import build_context
+from app.llm.llm_provider import llm_provider
+from app.core.config import settings
+from app.prompts.loader import load_system_prompt
 
 configure_logging()
 
@@ -27,9 +30,14 @@ queries = [
     "Milky way is in the Laniakea supercluster",
 ]
 
-user_preferences = ["short", "to-the-point", "technical"]
-
-system_prompt = "You are a chatbot, please respond professionally and courteously"
+user_preferences = {
+        "user_preferences": {
+        "verbosity": "short",
+        "style": "technical",
+        "tone": "to-the-point"
+        }
+    }
+system_prompt = load_system_prompt()
 
 query = "highest mountain"
 
@@ -95,6 +103,19 @@ async def run_test():
     print(f"Message: {messages}")
     print(f"Lenght of messages: {len(messages)}")
     print(f"Tokens used: {tokens}")
+
+    max_gen_tokens = (
+        settings.reserved_output_tokens
+        - settings.generation_safety_margin
+    )
+
+    response = await llm_provider.generate(
+        messages=messages,
+        max_tokens=max_gen_tokens
+    )
+
+    print("##### LLM Response #####")
+    print(response)
 
 
 if __name__ == "__main__":
