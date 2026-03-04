@@ -8,6 +8,7 @@ from app.core.config import settings
 
 async def maybe_summarize_conversation(
     db: AsyncSession,
+    tenant_id: str,
     conversation_id: str,
 ):
     counter = TokenCounter(settings.generation_model)
@@ -15,7 +16,10 @@ async def maybe_summarize_conversation(
     # fetch all messages with conversation_id
     stmt = (
         select(Message)
-        .where(Message.conversation_id == conversation_id)
+        .where(
+            Message.conversation_id == conversation_id,
+            Message.tenant_id == tenant_id,
+            )
         .order_by(Message.created_at.asc())
     )
 
@@ -26,7 +30,7 @@ async def maybe_summarize_conversation(
         return
     
     message_dicts = [
-        {"role": m["role"], "content": m["content"]}
+        {"role": m.role, "content": m.content}
         for m in messages
     ]
 
@@ -38,9 +42,32 @@ async def maybe_summarize_conversation(
     # preserve last N messages
     preserve_count = settings.recent_message_window
     to_summarize = messages[:-preserve_count]
+    remaining_messages = messages[-preserve_count:]
+
+    print("##### Remaining message count #####")
+    print(len(remaining_messages))
 
     if not to_summarize:
         return
+    
+    summary_stmt = select(ConversationSummary).where(
+        ConversationSummary.conversation_id == conversation_id,
+        ConversationSummary.tenant_id == tenant_id,
+    )
+
+    existing = (await db.execute(summary_stmt)).scalar_one_or_none()
+
+    conversation_text = ""
+
+    if existing:
+        conversation_text += f"Previous summary:\n{existing.summary_text}\n\n"
+
+    conversation_text += "New conversation segment:\n"
+    
+    conversation_text += "\n".join(
+        f"{msg.role.capitalize()}: {msg.content}"
+        for msg in to_summarize
+    )
     
     summary_prompt = [
         {
@@ -49,7 +76,7 @@ async def maybe_summarize_conversation(
         },
         {
             "role": "user",
-            "content": str(to_summarize),
+            "content": conversation_text,
         },
     ]
 
@@ -59,29 +86,37 @@ async def maybe_summarize_conversation(
         max_tokens=300,
     )
 
+    print("##### summary text #####")
+    print(summary_text)
+
     # upsert summary
-    summary_stmt = select(ConversationSummary).where(
-        ConversationSummary.conversation_id == conversation_id
-    )
-
-    existing = (await db.execute(summary_stmt)).scalar_one_or_none()
-
     if existing:
         existing.summary_text = summary_text
     else:
         db.add(
             ConversationSummary(
                 conversation_id=conversation_id,
+                tenant_id=tenant_id,
                 summary_text=summary_text,
             )
         )
     
     # Delete summarized messages
-    delete_stmt = delete(Message).where(
-        Message.conversation_id == conversation_id
-    ).order_by(Message.created_at.asc()).limit(
-        len(messages) - preserve_count
+    ids_to_delete_stmt = (
+        select(Message.id)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.asc())
+        .limit(len(messages) - preserve_count)
     )
 
-    await db.execute(delete_stmt)
+    result = await db.execute(ids_to_delete_stmt)
+    ids_to_delete = [row[0] for row in result.all()]
+
+    if ids_to_delete:
+        # Step 2 — Delete by IDs
+        delete_stmt = delete(Message).where(
+            Message.id.in_(ids_to_delete)
+        )
+        await db.execute(delete_stmt)
+    
     await db.commit()

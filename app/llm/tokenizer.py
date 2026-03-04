@@ -25,6 +25,6 @@ class TokenCounter:
         total = 0
         for msg in messages:
             total += self.count_text(msg["role"])
-            total += self.count_text(msg["context"])
+            total += self.count_text(msg["content"])
 
         return total
