@@ -4,7 +4,9 @@ from app.models.conversation import Message
 from app.models.memory import ConversationSummary
 from app.llm.tokenizer import TokenCounter
 from app.llm.llm_provider import llm_provider
+from app.models.message_archive import MessageArchive
 from app.core.config import settings
+
 
 async def maybe_summarize_conversation(
     db: AsyncSession,
@@ -101,22 +103,40 @@ async def maybe_summarize_conversation(
             )
         )
     
-    # Delete summarized messages
-    ids_to_delete_stmt = (
+    # Archive summarized messages
+    id_stmt = (
         select(Message.id)
-        .where(Message.conversation_id == conversation_id)
+        .where(
+            Message.conversation_id == conversation_id,
+            Message.tenant_id == tenant_id,
+            )
         .order_by(Message.created_at.asc())
         .limit(len(messages) - preserve_count)
     )
 
-    result = await db.execute(ids_to_delete_stmt)
-    ids_to_delete = [row[0] for row in result.all()]
+    result = await db.execute(id_stmt)
+    messages_to_archive = result.scalars().all()
 
-    if ids_to_delete:
-        # Step 2 — Delete by IDs
-        delete_stmt = delete(Message).where(
-            Message.id.in_(ids_to_delete)
+    if messages_to_archive:
+        # add messages to archive table
+        for msg in messages_to_archive:
+            db.add(
+                MessageArchive(
+                    id=msg.id,
+                    tenant_id=tenant_id,
+                    conversation_id=msg.conversation_id,
+                    role=msg.role,
+                    content=msg.content,
+                    created_at=msg.created_at
+                )
+            )
+
+        # delete from message table
+        await db.execute(
+            delete(Message).where(
+                Message.id.in_([m.id for m in messages_to_archive])
+            )
         )
-        await db.execute(delete_stmt)
-    
+
+
     await db.commit()
