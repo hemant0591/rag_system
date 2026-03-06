@@ -105,7 +105,7 @@ async def maybe_summarize_conversation(
     
     # Archive summarized messages
     id_stmt = (
-        select(Message.id)
+        select(Message)
         .where(
             Message.conversation_id == conversation_id,
             Message.tenant_id == tenant_id,
